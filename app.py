@@ -18,6 +18,18 @@ def index():
     return "Hello, World!"
 
 
+@app.route("/align/<text>")
+def align(text):
+    if os.path.isfile("temp/{}.png".format(text)):
+        return send_file("temp/{}.png".format(text), mimetype="image/png")
+    wav, align = generate(text)
+    sf.write("temp/{}.wav".format(text), wav, sample_rate)
+    plot_alignment(
+        align, "temp/{}.png".format(text), sequence_to_text(text_to_sequence(text))
+    )
+    return send_file("temp/{}.png".format(text), mimetype="image/png")
+
+
 @app.route("/<text>")
 def hello(text):
     if os.path.isfile("temp/{}.wav".format(text)):
