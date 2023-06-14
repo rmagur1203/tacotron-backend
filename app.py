@@ -18,6 +18,11 @@ def index():
     return "Hello, World!"
 
 
+@app.route("/favicon.ico")
+def favicon():
+    return ""
+
+
 @app.route("/align/<text>")
 def align(text):
     if os.path.isfile("temp/{}.png".format(text)):

@@ -9,7 +9,7 @@ from tensorflow.keras.layers import (
     BatchNormalization,
     Conv1D,
     MaxPooling1D,
-    GRUCell,
+    GRU,
 )
 from hparams import *
 
@@ -49,8 +49,20 @@ class CBHG(tf.keras.Model):
         self.dense1 = Dense(128)
         self.dense2 = Dense(128, bias_initializer=tf.constant_initializer(-1.0))
 
-        self.gru_fw = GRUCell(128)
-        self.gru_bw = GRUCell(128)
+        self.gru_fw = GRU(
+            128,
+            return_sequences=True,
+        )
+        self.gru_bw = GRU(
+            128,
+            return_sequences=True,
+            go_backwards=True,
+        )
+
+        self.bi_gru = tf.keras.layers.Bidirectional(
+            self.gru_fw,
+            backward_layer=self.gru_bw,
+        )
 
     def call(self, input_data, sequence_length, is_training):
         x = tf.concat(
@@ -80,13 +92,7 @@ class CBHG(tf.keras.Model):
             T = Activation("sigmoid")(T)
             highway_input = H * T + highway_input * (1.0 - T)
 
-        x, _ = tf.compat.v1.nn.bidirectional_dynamic_rnn(
-            self.gru_fw,
-            self.gru_bw,
-            highway_input,
-            sequence_length=sequence_length,
-            dtype=tf.float32,
-        )
+        x = self.bi_gru(highway_input)
         x = tf.concat(x, axis=2)
 
         return x
