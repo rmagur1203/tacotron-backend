@@ -1,15 +1,16 @@
-import re
-from jamo import hangul_to_jamo
+from jamo import hangul_to_jamo, JAMO_LEADS, JAMO_TAILS, JAMO_VOWELS
 
-PAD = "_"
-EOS = "~"
+PAD = "　"
+EOS = "¶"
 SPACE = " "
 
-JAMO_LEADS = "".join([chr(_) for _ in range(0x1100, 0x1113)])
-JAMO_VOWELS = "".join([chr(_) for _ in range(0x1161, 0x1176)])
-JAMO_TAILS = "".join([chr(_) for _ in range(0x11A8, 0x11C3)])
 
-VALID_CHARS = JAMO_LEADS + JAMO_VOWELS + JAMO_TAILS + SPACE
+# JAMO_LEADS = "".join([chr(_) for _ in range(0x1100, 0x1113)])
+# JAMO_VOWELS = "".join([chr(_) for _ in range(0x1161, 0x1176)])
+# JAMO_TAILS = "".join([chr(_) for _ in range(0x11A8, 0x11C3)])
+ASCII = "".join([chr(_) for _ in range(0x0021, 0x007E)])
+
+VALID_CHARS = "".join(JAMO_LEADS + JAMO_VOWELS + JAMO_TAILS) + ASCII + SPACE
 symbols = PAD + EOS + VALID_CHARS
 
 _symbol_to_id = {s: i for i, s in enumerate(symbols)}
@@ -17,14 +18,12 @@ _id_to_symbol = {i: s for i, s in enumerate(symbols)}
 
 
 def text_to_sequence(text):
-    text = re.sub(r" +", " ", text)
     sequence = []
     if not 0x1100 <= ord(text[0]) <= 0x1113:
         text = "".join(list(hangul_to_jamo(text)))
     for s in text:
-        if s in _symbol_to_id:
-            sequence.append(_symbol_to_id[s])
-    sequence.append(_symbol_to_id["~"])
+        sequence.append(_symbol_to_id[s])
+    sequence.append(_symbol_to_id[EOS])
     return sequence
 
 
