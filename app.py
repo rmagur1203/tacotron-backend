@@ -2,9 +2,11 @@ import os
 import shutil
 import numpy as np
 import soundfile as sf
+from datetime import datetime
 from flask import Flask, send_file
 from model import generate
 from hparams import *
+from utils.number import number_to_korean1, number_to_korean2
 from utils.plot import plot_alignment
 from utils.text import sequence_to_text, text_to_sequence
 
@@ -16,10 +18,16 @@ os.makedirs("temp")
 
 @app.route("/")
 def index():
-    if os.path.isfile("temp/root.wav"):
-        return send_file("temp/root.wav", mimetype="audio/wav")
+    now = datetime.now()
+    if os.path.isfile("temp/root-{}-{}.wav".format(now.hour, now.minute)):
+        return send_file(
+            "temp/root-{}-{}.wav".format(now.hour, now.minute), mimetype="audio/wav"
+        )
     result = []
-    texts = ["안녕하세요 지금은 열시 사십사분입니다", "오늘의 날씨는 맑음입니다."]
+    date1 = number_to_korean1((now.hour - 1) % 12 + 1)
+    date2 = number_to_korean2(now.minute)
+    texts = ["안녕하세요 지금은 {}시 {}분입니다".format(date1, date2), "오늘의 날씨는 맑음입니다."]
+    print(texts)
     for idx, text in enumerate(texts):
         # generate(text) returns (wav, alignment) tuple, we only need wav here
         wav, align = generate(text)
@@ -29,14 +37,16 @@ def index():
         # generate alignment for each audio chunk
         plot_alignment(
             np.concatenate(align, axis=0),
-            "temp/root-{}.png".format(idx),
+            "temp/root-{}-{}-{}.png".format(now.hour, now.minute, idx),
             sequence_to_text(text_to_sequence("".join(texts))),
         )
 
     # concatenate all audio chunks
     wav = np.concatenate(result, axis=0)
-    sf.write("temp/root.wav", wav, sample_rate)
-    return send_file("temp/root.wav", mimetype="audio/wav")
+    sf.write("temp/root-{}-{}.wav".format(now.hour, now.minute), wav, sample_rate)
+    return send_file(
+        "temp/root-{}-{}.wav".format(now.hour, now.minute), mimetype="audio/wav"
+    )
 
 
 @app.route("/favicon.ico")
