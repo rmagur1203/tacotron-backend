@@ -1,2 +1,2 @@
-model_checkpoint_path: "step-7500-15"
-all_model_checkpoint_paths: "step-7500-15"
+model_checkpoint_path: "step-6000-12"
+all_model_checkpoint_paths: "step-6000-12"
