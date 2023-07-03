@@ -1,5 +1,6 @@
 import os
 import shutil
+import numpy as np
 import soundfile as sf
 from flask import Flask, send_file
 from model import generate
@@ -15,7 +16,27 @@ os.makedirs("temp")
 
 @app.route("/")
 def index():
-    return "Hello, World!"
+    if os.path.isfile("temp/root.wav"):
+        return send_file("temp/root.wav", mimetype="audio/wav")
+    result = []
+    texts = ["안녕하세요 지금은 열시 사십사분입니다", "오늘의 날씨는 맑음입니다."]
+    for idx, text in enumerate(texts):
+        # generate(text) returns (wav, alignment) tuple, we only need wav here
+        wav, align = generate(text)
+        result.append(wav)
+        # append a small silence after each audio chunk
+        result.append(np.zeros([int(sample_rate * 0.1)], dtype=np.float32))
+        # generate alignment for each audio chunk
+        plot_alignment(
+            np.concatenate(align, axis=0),
+            "temp/root-{}.png".format(idx),
+            sequence_to_text(text_to_sequence("".join(texts))),
+        )
+
+    # concatenate all audio chunks
+    wav = np.concatenate(result, axis=0)
+    sf.write("temp/root.wav", wav, sample_rate)
+    return send_file("temp/root.wav", mimetype="audio/wav")
 
 
 @app.route("/favicon.ico")
